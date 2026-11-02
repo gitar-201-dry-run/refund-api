@@ -33,7 +33,14 @@ class PostgresStore:
                 (charge_id,),
             ).fetchone()
 
-    def record_refund(self, charge_id: str, refund_id: str, plan: RefundPlan, reason: str | None = None) -> Refund:
+    def record_refund(
+        self,
+        charge_id: str,
+        refund_id: str,
+        plan: RefundPlan,
+        reason: str | None = None,
+        reason_code: str | None = None,
+    ) -> Refund:
         # One transaction: the row lock on the charge serializes concurrent refunds.
         with psycopg.connect(self._url) as conn:
             charge_row = conn.cursor(row_factory=class_row(Charge)).execute(
@@ -44,7 +51,7 @@ class PostgresStore:
             if charge_row is None:
                 raise KeyError(charge_id)
             existing = conn.cursor(row_factory=class_row(Refund)).execute(
-                "SELECT id, charge_id, amount_cents, reason, created_at"
+                "SELECT id, charge_id, amount_cents, reason, reason_code, created_at"
                 " FROM refunds WHERE charge_id = %s ORDER BY created_at, id",
                 (charge_id,),
             ).fetchall()
@@ -53,18 +60,26 @@ class PostgresStore:
                 charge_id=charge_id,
                 amount_cents=plan(charge_row, existing),
                 reason=reason,
+                reason_code=reason_code,
             )
             conn.execute(
-                "INSERT INTO refunds (id, charge_id, amount_cents, reason, created_at)"
-                " VALUES (%s, %s, %s, %s, %s)",
-                (refund.id, refund.charge_id, refund.amount_cents, refund.reason, refund.created_at),
+                "INSERT INTO refunds (id, charge_id, amount_cents, reason, reason_code, created_at)"
+                " VALUES (%s, %s, %s, %s, %s, %s)",
+                (
+                    refund.id,
+                    refund.charge_id,
+                    refund.amount_cents,
+                    refund.reason,
+                    refund.reason_code,
+                    refund.created_at,
+                ),
             )
             return refund
 
     def list_refunds(self, charge_id: str) -> list[Refund]:
         with psycopg.connect(self._url, row_factory=class_row(Refund)) as conn:
             return conn.execute(
-                "SELECT id, charge_id, amount_cents, reason, created_at"
+                "SELECT id, charge_id, amount_cents, reason, reason_code, created_at"
                 " FROM refunds WHERE charge_id = %s ORDER BY created_at, id",
                 (charge_id,),
             ).fetchall()
