@@ -32,3 +32,11 @@ def test_refund_shows_in_refund_list(client, charge):
 def test_charge_cannot_be_fully_refunded_twice(client, charge):
     assert client.post(f"/charges/{charge['id']}/refund").status_code == 201
     assert client.post(f"/charges/{charge['id']}/refund").status_code == 409
+
+
+def test_reason_code_is_stored_and_listed(client, charge):
+    resp = client.post(f"/charges/{charge['id']}/refund", json={"reason_code": "requested_by_customer"})
+    assert resp.status_code == 201
+    assert resp.json()["reason_code"] == "requested_by_customer"
+    refunds = client.get(f"/charges/{charge['id']}/refunds").json()
+    assert [r["reason_code"] for r in refunds] == ["requested_by_customer"]
