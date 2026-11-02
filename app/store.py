@@ -25,6 +25,10 @@ class Store(Protocol):
 
     def list_refunds(self, charge_id: str) -> list[Refund]: ...
 
+    def refund_totals(self, charge_id: str) -> tuple[int, int]:
+        """Return (refund count, total refunded cents) for the charge."""
+        ...
+
 
 class MemoryStore:
     """In-memory storage. Data resets when the process restarts."""
@@ -55,3 +59,7 @@ class MemoryStore:
 
     def list_refunds(self, charge_id: str) -> list[Refund]:
         return list(self._refunds.get(charge_id, []))
+
+    def refund_totals(self, charge_id: str) -> tuple[int, int]:
+        refunds = self._refunds.get(charge_id, [])
+        return len(refunds), sum(r.amount_cents for r in refunds)
