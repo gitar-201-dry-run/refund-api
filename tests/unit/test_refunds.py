@@ -47,3 +47,31 @@ def test_refund_summary_after_full_refund(client, charge):
 
 def test_refund_summary_unknown_charge(client):
     assert client.get("/charges/ch_0000000000000000/refund-summary").status_code == 404
+
+
+def test_refund_summary_uses_injected_store(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import create_app
+    from app.models import Charge
+    from app.store import MemoryStore
+
+    class TotalsStore(MemoryStore):
+        def refund_totals(self, charge_id: str) -> tuple[int, int]:
+            assert charge_id == "ch_custom"
+            return 2, 1200
+
+    store = TotalsStore()
+    store.add_charge(Charge("ch_custom", 5000, "usd", "Order"))
+    monkeypatch.setenv("DATABASE_URL", "invalid DSN")
+    client = TestClient(create_app(store))
+
+    response = client.get("/charges/ch_custom/refund-summary")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "charge_id": "ch_custom",
+        "refund_count": 2,
+        "refunded_cents": 1200,
+        "remaining_cents": 3800,
+    }
