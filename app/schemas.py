@@ -17,9 +17,14 @@ class ChargeOut(BaseModel):
     created_at: datetime
 
 
+class RefundCreate(BaseModel):
+    reason_code: str | None = None
+
+
 class RefundOut(BaseModel):
     id: str
     charge_id: str
     amount_cents: int
     reason: str | None
+    reason_code: str | None
     created_at: datetime
