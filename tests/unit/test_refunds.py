@@ -1,3 +1,9 @@
+from fastapi.testclient import TestClient
+
+from app.main import create_app
+from app.store import MemoryStore
+
+
 def test_full_refund(client, charge):
     resp = client.post(f"/charges/{charge['id']}/refund")
     assert resp.status_code == 201
@@ -25,6 +31,24 @@ def test_refund_unknown_charge(client):
 
 def test_list_refunds_unknown_charge(client):
     assert client.get("/charges/ch_0000000000000000/refunds").status_code == 404
+
+
+def test_refund_summary_uses_injected_store(monkeypatch):
+    store = MemoryStore()
+    client = TestClient(create_app(store))
+    charge = client.post("/charges", json={"amount_cents": 5000, "description": "Order 1042"}).json()
+    calls = []
+
+    def refund_totals(charge_id):
+        calls.append(charge_id)
+        return 2, 1250
+
+    monkeypatch.setattr(store, "refund_totals", refund_totals)
+
+    body = client.get(f"/charges/{charge['id']}/refund-summary").json()
+
+    assert calls == [charge["id"]]
+    assert (body["refund_count"], body["refunded_cents"], body["remaining_cents"]) == (2, 1250, 3750)
 
 
 def test_refund_summary_before_any_refund(client, charge):
