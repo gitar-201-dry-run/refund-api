@@ -23,10 +23,3 @@ class RefundOut(BaseModel):
     amount_cents: int
     reason: str | None
     created_at: datetime
-
-
-class RefundSummaryOut(BaseModel):
-    charge_id: str
-    refund_count: int
-    refunded_cents: int
-    remaining_cents: int
