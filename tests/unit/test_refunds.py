@@ -33,6 +33,11 @@ def test_refund_with_reason_code(client, charge):
     assert resp.json()["reason_code"] == "duplicate"
 
 
+def test_refund_with_unknown_reason_code_is_rejected(client, charge):
+    resp = client.post(f"/charges/{charge['id']}/refund", json={"reason_code": "unknown"})
+    assert resp.status_code == 422
+
+
 def test_refund_without_reason_code(client, charge):
     resp = client.post(f"/charges/{charge['id']}/refund")
     assert resp.status_code == 201
