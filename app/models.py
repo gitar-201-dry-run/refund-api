@@ -21,5 +21,4 @@ class Refund:
     charge_id: str
     amount_cents: int
     reason: str | None = None
-    reason_code: str | None = None
     created_at: datetime = field(default_factory=utc_now)
