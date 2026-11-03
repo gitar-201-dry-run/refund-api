@@ -45,5 +45,12 @@ def test_refund_summary_after_full_refund(client, charge):
     assert body["remaining_cents"] == 0
 
 
+def test_refund_summary_uses_injected_store(client, charge, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://invalid")
+    response = client.get(f"/charges/{charge['id']}/refund-summary")
+    assert response.status_code == 200
+    assert response.json()["refund_count"] == 0
+
+
 def test_refund_summary_unknown_charge(client):
     assert client.get("/charges/ch_0000000000000000/refund-summary").status_code == 404
