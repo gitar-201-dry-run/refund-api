@@ -21,7 +21,7 @@ uvicorn app.main:app --reload
 
 ### Refund reason codes
 
-`POST /charges/{id}/refund` takes an optional JSON body with a `reason_code`. The allowed values are `duplicate`, `fraudulent`, `requested_by_customer`, and `other`. The code is stored with the refund and returned as `reason_code` by the refund and list endpoints.
+`POST /charges/{id}/refund` takes an optional JSON body with a `reason_code`. The allowed values are `duplicate`, `fraudulent`, `requested_by_customer`, and `other`. Any other value is rejected with a 422 and no refund is created. The code is stored with the refund and returned as `reason_code` by the refund and list endpoints.
 
 ```bash
 curl -X POST localhost:8000/charges/$CHARGE_ID/refund \
