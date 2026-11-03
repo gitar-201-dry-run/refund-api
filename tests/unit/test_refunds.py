@@ -34,8 +34,9 @@ def test_refund_with_reason_code(client, charge):
 
 
 def test_refund_with_unknown_reason_code_is_rejected(client, charge):
-    resp = client.post(f"/charges/{charge['id']}/refund", json={"reason_code": "unknown"})
+    resp = client.post(f"/charges/{charge['id']}/refund", json={"reason_code": "bogus"})
     assert resp.status_code == 422
+    assert client.get(f"/charges/{charge['id']}/refunds").json() == []
 
 
 def test_refund_without_reason_code(client, charge):
