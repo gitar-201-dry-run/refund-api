@@ -15,7 +15,14 @@ class Store(Protocol):
 
     def get_charge(self, charge_id: str) -> Charge | None: ...
 
-    def record_refund(self, charge_id: str, refund_id: str, plan: RefundPlan, reason: str | None = None) -> Refund:
+    def record_refund(
+        self,
+        charge_id: str,
+        refund_id: str,
+        plan: RefundPlan,
+        reason: str | None = None,
+        reason_code: str | None = None,
+    ) -> Refund:
         """Atomically read the charge's refunds, run `plan`, and store the refund it returns.
 
         Concurrent calls for the same charge are serialized, so `plan` always sees every
@@ -40,7 +47,14 @@ class MemoryStore:
     def get_charge(self, charge_id: str) -> Charge | None:
         return self._charges.get(charge_id)
 
-    def record_refund(self, charge_id: str, refund_id: str, plan: RefundPlan, reason: str | None = None) -> Refund:
+    def record_refund(
+        self,
+        charge_id: str,
+        refund_id: str,
+        plan: RefundPlan,
+        reason: str | None = None,
+        reason_code: str | None = None,
+    ) -> Refund:
         with self._lock:
             charge = self._charges[charge_id]
             existing = self._refunds.setdefault(charge_id, [])
@@ -49,6 +63,7 @@ class MemoryStore:
                 charge_id=charge_id,
                 amount_cents=plan(charge, list(existing)),
                 reason=reason,
+                reason_code=reason_code,
             )
             existing.append(refund)
             return refund
