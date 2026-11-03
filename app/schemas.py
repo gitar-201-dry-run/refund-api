@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+ReasonCode = Literal["duplicate", "fraudulent", "requested_by_customer", "other"]
 
 
 class ChargeCreate(BaseModel):
@@ -18,7 +21,7 @@ class ChargeOut(BaseModel):
 
 
 class RefundCreate(BaseModel):
-    reason_code: str | None = None
+    reason_code: ReasonCode | None = None
 
 
 class RefundOut(BaseModel):
