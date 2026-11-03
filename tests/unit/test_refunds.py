@@ -39,6 +39,12 @@ def test_refund_without_reason_code(client, charge):
     assert resp.json()["reason_code"] is None
 
 
+def test_refund_with_unknown_reason_code(client, charge):
+    resp = client.post(f"/charges/{charge['id']}/refund", json={"reason_code": "bogus"})
+    assert resp.status_code == 422
+    assert client.get(f"/charges/{charge['id']}/refunds").json() == []
+
+
 def test_reason_code_appears_in_refund_list(client, charge):
     client.post(f"/charges/{charge['id']}/refund", json={"reason_code": "fraudulent"})
     refunds = client.get(f"/charges/{charge['id']}/refunds").json()
